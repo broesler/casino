@@ -55,12 +55,6 @@ class CasinoGame:
     def gameStatus(self):
         self.table.tableStatus()
 
-    # # Add more money to user's cache
-    # def __getMoney(self):
-    #     m = input(CasinoGame.PROMPT+" How much money would you like? > $") \
-    #             or Blackjack.DEFAULT_MONEY
-    #     self.user.money += float(m)
-
     #--------------------------------------------------------------------------
     #        Play the game
     #--------------------------------------------------------------------------
@@ -132,7 +126,7 @@ class Blackjack(CasinoGame):
         self.user   = None    # Keep track who the interactive user is
         self.dealer = None
 
-    # Prompt user to set up game variables
+    # Prompt user to set up game variables. Creates new instance of the Table.
     def gameInit(self, useDefaults=True):
         if not useDefaults:
             choice = input(CasinoGame.PROMPT+" Use defaults? [y/n] > ") or "y"
