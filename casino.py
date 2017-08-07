@@ -11,13 +11,14 @@
 #==============================================================================
 import sys
 import cardgame
+from cardgame import GamePause
 
 #------------------------------------------------------------------------------
 #       Casino Royale with Cheese
 #------------------------------------------------------------------------------
 class Casino:
     """ Wrapper class to govern the playing and loading of all games. """
-    PROMPT = "(Casino)> "
+    _PROMPT = "(Casino)> "
 
     def __init__(self):
         self.name = "TUI"
@@ -25,19 +26,21 @@ class Casino:
     # Display welcome message
     def __welcome(self):
         print("~~~~~~~~~~ Welcome to the {} Casino! ~~~~~~~~~~\n"
-              "  So you want to try your luck against the dealer?\n\n"
-              "  Choose an option to continue:\n".format(self.name))
+              "So you want to try your luck against the dealer?\n\n"
+              "Choose an option to continue:\n".format(self.name))
 
     def __casinoMenu(self):
         print("---------- Options ----------\n"
               "    ? -- print this menu\n"
               "    n -- start a new game\n"
-              "    r -- resume saved game\n"
+              "    r -- resume paused game\n"
+              "    l -- load saved game\n"
               "    e -- exit\n")
 
     def __parse(self, p):
         opt = { '?' : self.__casinoMenu,
                 'n' : self.newGame,
+                'l' : self.loadGame,
                 'r' : self.resumeGame,
                 'e' : self.__exit,
               }
@@ -51,7 +54,7 @@ class Casino:
         print("---------- Choose a game: ----------\n"
               "  ? -- print this menu\n"
               "  1 -- blackjack\n"
-              "  ...more coming soon!")
+              "       ...more coming soon!")
 
     def __gameParse(self, p):
         opt = { '?' : self.__gameMenu,
@@ -71,10 +74,14 @@ class Casino:
                 if __debug__:
                     choice = "1"
                 else:
-                    choice = input(Casino.PROMPT)
+                    choice = input(Casino._PROMPT)
                 self.__gameParse(choice)
             except (KeyboardInterrupt, EOFError):
                 self.__exit()
+            except GamePause:
+                # Drop back into casino outer loop, so print menu
+                self.__casinoMenu()
+                break
 
     # Some way to make this function generic? i.e. just take "Blackjack" as
     # argument and run init, then play "new game". Then that game object is
@@ -85,8 +92,17 @@ class Casino:
         g.gameInit(useDefaults=True) # start with default, user can change later
         g.play()
 
-    # Load saved game
+    # Resume paused game
     def resumeGame(self):
+        print("Not supported")
+        pass
+
+    # Load saved game
+    def loadGame(self):
+        # Get list of all files in '.casino_save/'
+        # For now... sort by time and just load the first one
+        # Later: Parse to get time-stamp and pretty-print options
+        # Load user-selected file and g.play()
         print("Not supported")
         pass
 
@@ -104,7 +120,7 @@ class Casino:
                 if __debug__:
                     choice = "n"
                 else:
-                    choice = input(Casino.PROMPT)
+                    choice = input(Casino._PROMPT)
                 self.__parse(choice)
             except (KeyboardInterrupt, EOFError):
                 self.__exit()

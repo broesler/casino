@@ -13,6 +13,7 @@ import names
 import pickle
 import random
 import sys
+import time
 
 # Custom imports
 import cards
@@ -23,18 +24,19 @@ from my_util import cmp, flatten
 #------------------------------------------------------------------------------
 class CasinoGame:
     """ Individual casino game class """
-    # Class variables
-    PROMPT = "(*)>"
+    _SAVE_DIR = "./.casino_save/"
 
     def __init__(self, name=""):
         self.name = name
-        CasinoGame.PROMPT = "({})> ".format(self.name)
+        self._PROMPT = "({})> ".format(self.name)
 
     def __save(self):
         choice = input("Save game? [y/n] > ")
         if choice == "y":
-            # save game
-            pickle_file = ".casinogame_pickle_dump_" + str(id(self))
+            # save game with time-stamp
+            pickle_file = self._SAVE_DIR \
+                    + ".{}_pickle_dump_".format(self.name) \
+                    + str(int(time.mktime(time.localtime())))
             pickle.dump(self, open(pickle_file, "wb"))
 
     # Pause game drops back into main loop
@@ -64,10 +66,10 @@ class CasinoGame:
         while True:
             try:
                 # Get user input
-                choice = input(CasinoGame.PROMPT)
+                choice = input(self._PROMPT)
                 self.__gameParse(choice)
             except GamePause:
-                break
+                raise GamePause     # pass it along so we drop to casino loop
             except (KeyboardInterrupt, EOFError):
                 self.__exit()    
 
@@ -120,7 +122,8 @@ class Blackjack(CasinoGame):
     DEFAULT_MONEY = 1000.00
 
     def __init__(self, nd=6):
-        CasinoGame.__init__(self, name="Blackjack")
+        # super().__init__(name="Blackjack")
+        super().__init__(name=self.__class__.__name__)
         self.table  = None
         self.deck   = cards.Deck(nd)
         self.user   = None    # Keep track who the interactive user is
@@ -129,7 +132,7 @@ class Blackjack(CasinoGame):
     # Prompt user to set up game variables. Creates new instance of the Table.
     def gameInit(self, useDefaults=True):
         if not useDefaults:
-            choice = input(CasinoGame.PROMPT+" Use defaults? [y/n] > ") or "y"
+            choice = input(self._PROMPT+" Use defaults? [y/n] > ") or "y"
             useDefaults = (choice == "y")
 
         if useDefaults:
@@ -137,10 +140,10 @@ class Blackjack(CasinoGame):
             m  = Blackjack.DEFAULT_M
             n  = "TheUser"
         else:
-            n  = input(CasinoGame.PROMPT+" What is your name? > ") or ""
-            np = input(CasinoGame.PROMPT+" Enter number of players > ") \
+            n  = input(self._PROMPT+" What is your name? > ") or ""
+            np = input(self._PROMPT+" Enter number of players > ") \
                     or Blackjack.DEFAULT_NP
-            m  = input(CasinoGame.PROMPT+" Enter minimum bet > $") \
+            m  = input(self._PROMPT+" Enter minimum bet > $") \
                     or Blackjack.DEFAULT_M
 
         # Use defaults here
@@ -198,6 +201,7 @@ class Blackjack(CasinoGame):
 
         ### Check for dealer blackjack
         if self.hasBlackjack(self.dealer):
+            print("Dealer has blackjack!")
             self.settleBets()
             return
 
@@ -212,7 +216,6 @@ class Blackjack(CasinoGame):
         ### Settle bets
         print("...Settling bets...")
         self.settleBets()
-        print("done.")
 
     #--------------------------------------------------------------------------
     #        Perform ops for entire table
@@ -441,6 +444,7 @@ class Blackjack(CasinoGame):
         print("{}: \"I surrender :(\"".format(seat.player.name))
         # Keep 1/2 bet only, house gets the rest
         seat.player.money += 0.5*seat.player.bet
+        # TODO prevent loss message from being displayed, or display it here
         seat.player.bet = 0  # Set bet to 0, and score to 0 so we guarantee loss
         h.score = 0
         raise BlackjackStand
@@ -465,7 +469,7 @@ class Blackjack(CasinoGame):
             print("### Your hand is:\n{}".format(str(hand)))
             print("### Your score for your hand is:", hand.score)
             self.__handMenu()
-            return input(CasinoGame.PROMPT)
+            return input(self._PROMPT)
         else:   # Computer random choice
             # return self.chooseRand(seat.player, hand)
             return "s" # dummy out for now
