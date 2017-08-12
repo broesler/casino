@@ -10,8 +10,8 @@
 """
 #==============================================================================
 import sys
-import cardgame
-from cardgame import GamePause
+import casinogame
+from casinogame import GamePause
 
 #------------------------------------------------------------------------------
 #       Casino Royale with Cheese
@@ -50,6 +50,7 @@ class Casino:
             else:
                 print("Invalid input. Press ? for help.")
 
+    # TODO put in options for other games here
     def __gameMenu(self):
         print("---------- Choose a game: ----------\n"
               "  ? -- print this menu\n"
@@ -67,7 +68,6 @@ class Casino:
                 print("Invalid input.")
 
     def newGame(self):
-        # TODO put in options for other games here
         self.__gameMenu()
         while True:
             try:
@@ -75,13 +75,13 @@ class Casino:
                     choice = "1"
                 else:
                     choice = input(Casino._PROMPT)
-                self.__gameParse(choice)
+                # Keep the value of the game started (if one)
+                g = self.__gameParse(choice)
             except (KeyboardInterrupt, EOFError):
                 self.__exit()
             except GamePause:
                 # Drop back into casino outer loop, so print menu
                 self.__casinoMenu()
-                break
 
     # Some way to make this function generic? i.e. just take "Blackjack" as
     # argument and run init, then play "new game". Then that game object is
@@ -93,7 +93,7 @@ class Casino:
         g.play()
 
     # Resume paused game
-    def resumeGame(self):
+    def resumeGame(self, g):
         print("Not supported")
         pass
 
