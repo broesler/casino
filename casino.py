@@ -88,7 +88,7 @@ class Casino:
     # stored so we could pause, drop back into casino.run() and then resumeGame
     # by using "g.play()" again. Also works for re-loading saved game.
     def __Blackjack(self):
-        g = cardgame.Blackjack()
+        g = casinogame.Blackjack()
         g.gameInit(useDefaults=True) # start with default, user can change later
         g.play()
 
