@@ -107,6 +107,11 @@ class Player:
         self.bet = 0.0
         self.isUser = isUser
 
+    # Accessing
+    def getFirstHand(self):
+        return self.hand[0]
+
+    # Actions
     def placeBet(self, bet):
         if bet > self.money:
             print("{} is out of money!".format(self.name))

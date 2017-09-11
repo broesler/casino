@@ -1,6 +1,6 @@
 #!/usr/local/anaconda3/bin/python
 #==============================================================================
-#     File: cardgame.py
+#     File: casino.py
 #  Created: 08/03/2017, 10:08
 #   Author: Bernie Roesler
 #
@@ -9,9 +9,18 @@
   resume old (not yet implemented), or just exit.
 """
 #==============================================================================
+
+import pickle
+import os
 import sys
+
 import casinogame
 from casinogame import GamePause
+
+def ls_sort_mtime(path):
+    ''' Sort files in path by mtime. '''
+    mtime = lambda f: os.stat(os.path.join(path, f)).st_mtime
+    return list(sorted(os.listdir(path), key=mtime))
 
 #------------------------------------------------------------------------------
 #       Casino Royale with Cheese
@@ -19,6 +28,7 @@ from casinogame import GamePause
 class Casino:
     """ Wrapper class to govern the playing and loading of all games. """
     _PROMPT = "(Casino)> "
+    _GAME_LIST = []
 
     def __init__(self):
         self.name = "TUI"
@@ -89,22 +99,24 @@ class Casino:
     # by using "g.play()" again. Also works for re-loading saved game.
     def __Blackjack(self):
         g = casinogame.Blackjack()
+        _GAME_LIST.append(g)
         g.gameInit(useDefaults=True) # start with default, user can change later
         g.play()
 
     # Resume paused game
     def resumeGame(self, g):
-        print("Not supported")
-        pass
+        g = _GAME_LIST.pop()
+        g.play()
 
     # Load saved game
     def loadGame(self):
-        # Get list of all files in '.casino_save/'
-        # For now... sort by time and just load the first one
-        # Later: Parse to get time-stamp and pretty-print options
+        # TODO have global/shared variable for path 
+        # TODO Parse to get time-stamp and pretty-print options for menu
         # Load user-selected file and g.play()
-        print("Not supported")
-        pass
+        path = "./.casino_save/"
+        files = ls_sort_mtime(path)
+        g = pickle.load(open(os.path.join(path, files[0]), "rb"))
+        g.play()
 
     # Quit altogether
     def __exit(self):

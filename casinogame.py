@@ -1,6 +1,6 @@
 #!/usr/local/anaconda3/bin/python
 #==============================================================================
-#     File: blackjack.py
+#     File: casinogame.py
 #  Created: 08/02/2017, 21:19
 #   Author: Bernie Roesler
 #
@@ -9,11 +9,13 @@
 """
 #==============================================================================
 # Standard imports
-import names
 import pickle
 import random
 import sys
 import time
+
+# Get random names for computer players
+import names
 
 # Custom imports
 import cards
@@ -29,15 +31,14 @@ class CasinoGame:
     def __init__(self, name=""):
         self.name = name
         self._PROMPT = "({})> ".format(self.name)
+        self.table = None
 
     def __save(self):
-        choice = input("Save game? [y/n] > ")
-        if choice == "y":
-            # save game with time-stamp
-            pickle_file = self._SAVE_DIR \
-                    + ".{}_pickle_dump_".format(self.name) \
-                    + str(int(time.mktime(time.localtime())))
-            pickle.dump(self, open(pickle_file, "wb"))
+        # save game with time-stamp
+        pickle_file = self._SAVE_DIR \
+                + "{}_pickle_dump_".format(self.name) \
+                + str(int(time.mktime(time.localtime())))
+        pickle.dump(self, open(pickle_file, "wb"))
 
     # Pause game drops back into main loop
     def __pause(self):
@@ -109,6 +110,12 @@ class CasinoGame:
             else:
                 print("Invalid input. Press ? for help.")
 
+    def playRound(self):
+        pass
+
+    def gameInit(self):
+        pass
+
 #------------------------------------------------------------------------------
 #       Blackjack game class
 #------------------------------------------------------------------------------
@@ -121,8 +128,8 @@ class Blackjack(CasinoGame):
     DEFAULT_S  = 0    # user seat at table
     DEFAULT_MONEY = 1000.00
 
+    # default 6 decks
     def __init__(self, nd=6):
-        # super().__init__(name="Blackjack")
         super().__init__(name=self.__class__.__name__)
         self.table  = None
         self.deck   = cards.Deck(nd)
@@ -186,7 +193,7 @@ class Blackjack(CasinoGame):
         self.deck.shuffle()
 
         ### Place bets
-        self.table.around(self.takeBet)
+        self.placeBets()
 
         ### Deal a round (one up, one down)
         print("...Dealing the round...")
@@ -243,6 +250,10 @@ class Blackjack(CasinoGame):
     def playHands(self):
         self.table.around(self.playHand)
 
+    def placeBets(self):
+        self.takeBet(self.dealer)
+        self.table.around(self.takeBet)
+
     # Settle all players' bets with the dealer
     def settleBets(self):
         self.table.around(self.settleBet(self.dealer))
@@ -285,7 +296,6 @@ class Blackjack(CasinoGame):
         if not seat.isEmpty:
             seat.player.forAllHands(self.scoreHand)
 
-    # TODO "could be a function"
     def scoreHand(self, hand):
         # Create list of "blackjack" values of cards
         vals = [card.val for card in hand.cards]
@@ -302,24 +312,16 @@ class Blackjack(CasinoGame):
             hand.score = score_a
         else:
             # Set aces to 11
-            for i in ace_ind: bj_vals[i] = 11
+            for i in ace_ind: 
+                bj_vals[i] = 11
             score_b = sum(bj_vals)
             if score_b > 21:
                 hand.score = score_a
             else:
                 hand.score = score_b
 
-    # TODO function?
     def settleBet(self, other):
-        print("Dealer has: ", other.player.hand[0].score)
-        # NOTE what we're really doing:
-        # lst = list(map(lambda x:
-        #             list(map(lambda y:
-        #                 cmp(x,y),
-        #                     dealer.hand)),
-        #                         player.hand))
-        # BUT our operations are INDEPEDENT of the implementation of seats,
-        # players and hands!
+        print("Dealer has: ", other.player.getFirstHand().score)
 
         # Transfer money from a to b
         def transfer(a, b):
@@ -328,7 +330,6 @@ class Blackjack(CasinoGame):
             b.player.bet = 0.0
 
         # Compare two hands and return -1 if a < b, 0 if a == b, 1 if a > b
-        # TODO simplify logic??
         def compare(a, b):
             if (a.score > 21) and (b.score > 21):
                 return 0   # it's a tie!
@@ -338,6 +339,14 @@ class Blackjack(CasinoGame):
                 return 1   # "a > b" so a wins
             else:
                 return cmp(a, b)
+
+        # NOTE what we're really doing with lambda_x and op:
+        # lst = map(lambda x: 
+        #         map(lambda y: cmp(x,y), 
+        #             dealer.hand), 
+        #         player.hand)
+        # BUT our operations are INDEPEDENT of the implementation of seats,
+        # players and hands!
 
         # a procedure that takes the player's hand as the argument, and returns
         # a procedure that loops over all of the other player's hands
@@ -367,7 +376,6 @@ class Blackjack(CasinoGame):
                         transfer(seat, other)
         return op
 
-    # function?
     def hasBlackjack(self, seat):
         if not seat.isEmpty:
             def op(h):
@@ -400,9 +408,8 @@ class Blackjack(CasinoGame):
 
                         # Execute procedure
                         op = self.__handParse(choice)
-                        if op:
-                            op(seat, h)
-                            self.scoreHand(h)
+                        op(seat, h)
+                        self.scoreHand(h)
 
                     # Move on to next player
                     except BlackjackStand:
@@ -426,7 +433,6 @@ class Blackjack(CasinoGame):
         # Deal one card to player
         self.deal(ncard=1, faceup=True)(seat)
 
-    # function
     def __handStand(self, seat, h):
         # Do nothing.
         print("{}: \"I'll stand.\"".format(seat.player.name))
@@ -437,9 +443,9 @@ class Blackjack(CasinoGame):
         # Double bet, take one extra card, stand.
         seat.player.placeBet(seat.player.bet)
         self.deal(ncard=1, faceup=True)(seat)
+        # TODO print if player busted or not here
         raise BlackjackStand
 
-    # function
     def __handSurrender(self, seat, h):
         print("{}: \"I surrender :(\"".format(seat.player.name))
         # Keep 1/2 bet only, house gets the rest
@@ -449,15 +455,14 @@ class Blackjack(CasinoGame):
         h.score = 0
         raise BlackjackStand
 
-    # function
     def __handSplit(self, seat, h):
         pass
         # print("{}: \"I'd like to split my hand.\"".format(seat.player.name))
         # raise BlackjackStand
-        # TODO Check if player has a pair
+        # TODO How to add to hands if we're iterating over list of hands??
         # if h.hasPair():
             # make another hand
-            # seat.player.addHand(
+            # seat.player.addHand(...)
 
     #--------------------------------------------------------------------------
     #        Interface
@@ -468,6 +473,7 @@ class Blackjack(CasinoGame):
             print("########## It's your turn! ##########")
             print("### Your hand is:\n{}".format(str(hand)))
             print("### Your score for your hand is:", hand.score)
+            print("### The dealer has:", self.dealer.player.getFirstHand().score)
             self.__handMenu()
             return input(self._PROMPT)
         else:   # Computer random choice
@@ -475,14 +481,12 @@ class Blackjack(CasinoGame):
             return "s" # dummy out for now
 
     def gameStatus(self):
-        self.dealer.player.playerStatus()  # dealer is unique to blackjack
+        self.dealer.player.playerStatus()   # dealer is unique to blackjack
         super(Blackjack, self).gameStatus() # just the table
 
-    # function
     def __handMenu(self):
         print("---------- Options ----------\n"
               "  ? -- print this menu\n"
-              "  g -- show game status\n"
               "  h -- hit (draw another card)\n"
               "  s -- stand (move on to next player)\n"
               "  d -- double-down (double bet and take one hit)\n"
@@ -491,7 +495,6 @@ class Blackjack(CasinoGame):
 
     def __handParse(self, c):
         opt = {'?' : self.__handMenu,
-               'g' : self.gameStatus,
                'h' : self.__handHit,
                's' : self.__handStand,
                'd' : self.__handDoubleDown,
